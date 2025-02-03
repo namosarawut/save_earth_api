@@ -1,0 +1,35 @@
+# 🔹 Node.js dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# 🔹 Environment variables
+.env
+
+# 🔹 Logs & Debugging
+logs/
+*.log
+debug.log
+error.log
+out.log
+
+# 🔹 Uploaded Files (เช่น ไฟล์อัปโหลดจากผู้ใช้)
+uploads/
+
+# 🔹 Database & System Files
+*.sqlite
+*.db
+*.sql
+.DS_Store
+Thumbs.db
+
+# 🔹 IDE/Editor Specific Files
+.vscode/
+.idea/
+*.iml
+
+# 🔹 OS Specific Files
+*.swp
+*.swo
