@@ -2,6 +2,9 @@ const express = require("express");
 const db = require("../config/db");
 const upload = require("../middleware/uploadMiddleware");
 const router = express.Router();
+const path = require("path");
+const app = express();
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // 1. POST: สร้าง Item ใหม่
 router.post("/", upload.single("image"), async (req, res) => {
@@ -80,7 +83,7 @@ router.put("/:item_id", upload.single("image"), async (req, res) => {
     if (req.file) {
         image_url = `/uploads/${req.file.filename}`;
     }
-    
+     
     try {
         const query = image_url 
             ? "UPDATE items SET name = ?, category = ?, description = ?, latitude = ?, longitude = ?, image_url = ? WHERE item_id = ?"
