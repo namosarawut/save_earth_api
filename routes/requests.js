@@ -20,8 +20,41 @@ router.post("/", async (req, res) => {
 router.get("/user/:user_id", async (req, res) => {
     const { user_id } = req.params;
     try {
-        const [requests] = await db.query("SELECT * FROM requests WHERE user_id = ?", [user_id]);
-        res.json({ requests });
+        const [requests] = await db.query(
+            `SELECT r.request_id, r.reason, r.status, r.created_at, 
+                    i.item_id, i.name, i.image_url, i.category, i.latitude, i.longitude, 
+                    u.user_id AS poster_user_id, u.username AS poster_username, u.first_name, u.last_name, u.phone_number 
+             FROM requests r 
+             JOIN items i ON r.item_id = i.item_id 
+             JOIN users u ON i.poster_user_id = u.user_id 
+             WHERE r.user_id = ?`, [user_id]
+        );
+        
+        const formattedRequests = requests.map(req => ({
+            request_id: req.request_id,
+            item: {
+                item_id: req.item_id,
+                name: req.name,
+                image_url: req.image_url,
+                category: req.category,
+                latitude: req.latitude,
+                longitude: req.longitude,
+                posted_by: {
+                    user_id: req.poster_user_id,
+                    username: req.poster_username,
+                    contact: {
+                        first_name: req.first_name,
+                        last_name: req.last_name,
+                        phone_number: req.phone_number
+                    }
+                }
+            },
+            reason: req.reason,
+            status: req.status,
+            created_at: req.created_at
+        }));
+        
+        res.json(formattedRequests);
     } catch (error) {
         res.status(500).json({ message: "Server error", error });
     }
