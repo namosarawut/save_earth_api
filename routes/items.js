@@ -166,4 +166,90 @@ router.get("/search/category", async (req, res) => {
     }
 });
 
+// 1. POST: เพิ่ม Item ลงในรายการถูกใจ
+router.post("/favorites", async (req, res) => {
+    const { user_id, item_id } = req.body;
+    if (!user_id || !item_id) {
+        return res.status(400).json({ message: "Missing required fields" });
+    }
+    try {
+        await db.query("INSERT INTO favorites (user_id, item_id, added_at) VALUES (?, ?, NOW())", [user_id, item_id]);
+        res.status(201).json({ message: "Item added to favorites successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error });
+    }
+});
+
+// 2. DELETE: ลบ Item ออกจากรายการถูกใจ
+router.delete("/favorites/delete", async (req, res) => {
+    const { user_id, item_id } = req.body;
+
+    if (!user_id || !item_id || isNaN(user_id) || isNaN(item_id)) {
+        return res.status(400).json({ message: "Invalid user_id or item_id" });
+    }
+
+    try {
+        await db.query("DELETE FROM favorites WHERE user_id = ? AND item_id = ?", [user_id, item_id]);
+        res.json({ message: "Item removed from favorites successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error });
+    }
+});
+
+router.delete("/favorites", async (req, res) => {
+    const {user_id, item_id } = req.params;
+    try {
+        await db.query("DELETE FROM favorites WHERE user_id = ? AND item_id = ?", [user_id, item_id]);
+        res.json({ message: "Item deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error });
+    }
+});
+ 
+// 3. GET: ดึงรายการถูกใจของผู้ใช้
+router.get("/favorites/:user_id", async (req, res) => {
+    const { user_id } = req.params;
+    try {
+        const [favorites] = await db.query(
+            `SELECT f.favorite_id, f.added_at, 
+                    i.item_id, i.name, i.image_url, i.category, i.description, i.latitude, i.longitude, i.status, i.created_at, 
+                    u.user_id AS poster_user_id, u.username AS poster_username, u.first_name, u.last_name, u.phone_number 
+             FROM favorites f 
+             JOIN items i ON f.item_id = i.item_id 
+             JOIN users u ON i.poster_user_id = u.user_id 
+             WHERE f.user_id = ?`, [user_id]
+        );
+        
+        const formattedFavorites = favorites.map(fav => ({
+            favorite_id: fav.favorite_id,
+            item: {
+                item_id: fav.item_id,
+                name: fav.name,
+                image_url: fav.image_url,
+                category: fav.category,
+                description: fav.description,
+                latitude: fav.latitude,
+                longitude: fav.longitude,
+                status: fav.status,
+                created_at: fav.created_at,
+                posted_by: {
+                    user_id: fav.poster_user_id,
+                    username: fav.poster_username,
+                    contact: {
+                        first_name: fav.first_name,
+                        last_name: fav.last_name,
+                        phone_number: fav.phone_number
+                    }
+                }
+            },
+            added_at: fav.added_at
+        }));
+        
+        res.json(formattedFavorites);
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error });
+    }
+});
+
+
 module.exports = router;
