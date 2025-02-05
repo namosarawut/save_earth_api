@@ -144,4 +144,26 @@ router.get("/search", async (req, res) => {
     }
 });
 
+// 8. GET: ค้นหา Items ตาม category และระยะทาง
+router.get("/search/category", async (req, res) => {
+    const { category, latitude, longitude } = req.query;
+    if (!category || !latitude || !longitude) {
+        return res.status(400).json({ message: "Missing required parameters" });
+    }
+    try {
+        const [items] = await db.query(
+            `SELECT *, (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * 
+                        cos(radians(longitude) - radians(?)) + 
+                        sin(radians(?)) * sin(radians(latitude)))) AS distance 
+             FROM items 
+             WHERE category = ? AND status != 'taken' 
+             ORDER BY distance ASC`, 
+            [latitude, longitude, latitude, category]
+        );
+        res.json({ items });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error });
+    }
+});
+
 module.exports = router;
